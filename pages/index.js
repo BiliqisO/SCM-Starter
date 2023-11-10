@@ -1,46 +1,45 @@
-import {useState, useEffect} from "react";
-import {ethers} from "ethers";
-import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import atm_abi from "../assessmentABI.json";
 
 export default function HomePage() {
   const [ethWallet, setEthWallet] = useState(undefined);
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
-  const [balance, setBalance] = useState(undefined);
+  const [balance, setBalance] = useState(0);
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-  const atmABI = atm_abi.abi;
+  const contractAddress = "0x2faf36708dd04bb36641a79efbf4390313c19413";
+  const atmABI = atm_abi;
 
-  const getWallet = async() => {
+  const getWallet = async () => {
     if (window.ethereum) {
       setEthWallet(window.ethereum);
     }
 
     if (ethWallet) {
-      const account = await ethWallet.request({method: "eth_accounts"});
+      const account = await ethWallet.request({ method: "eth_accounts" });
       handleAccount(account);
     }
-  }
+  };
 
   const handleAccount = (account) => {
     if (account) {
-      console.log ("Account connected: ", account);
+      console.log("Account connected: ", account);
       setAccount(account);
-    }
-    else {
+    } else {
       console.log("No account found");
     }
-  }
+  };
 
-  const connectAccount = async() => {
+  const connectAccount = async () => {
     if (!ethWallet) {
-      alert('MetaMask wallet is required to connect');
+      alert("MetaMask wallet is required to connect");
       return;
     }
-  
-    const accounts = await ethWallet.request({ method: 'eth_requestAccounts' });
+
+    const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts);
-    
+
     // once wallet is set we can get a reference to our deployed contract
     getATMContract();
   };
@@ -49,69 +48,78 @@ export default function HomePage() {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
     const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
- 
+
     setATM(atmContract);
-  }
+  };
 
-  const getBalance = async() => {
+  const getCounter = async () => {
     if (atm) {
-      setBalance((await atm.getBalance()).toNumber());
+      setBalance((await atm.getCounter()).toNumber());
     }
-  }
+  };
 
-  const deposit = async() => {
+  const increaseCounter = async () => {
     if (atm) {
-      let tx = await atm.deposit(1);
-      await tx.wait()
-      getBalance();
+      let tx = await atm.increment();
+      await tx.wait();
+      getCounter();
     }
-  }
+  };
 
-  const withdraw = async() => {
+  const decreaseCounter = async () => {
     if (atm) {
-      let tx = await atm.withdraw(1);
-      await tx.wait()
-      getBalance();
+      let tx = await atm.decrement();
+      await tx.wait();
+      getCounter();
     }
-  }
+  };
 
   const initUser = () => {
     // Check to see if user has Metamask
     if (!ethWallet) {
-      return <p>Please install Metamask in order to use this ATM.</p>
+      return <p>Please install Metamask in order to use this ATM.</p>;
     }
 
     // Check to see if user is connected. If not, connect to their account
     if (!account) {
-      return <button onClick={connectAccount}>Please connect your Metamask wallet</button>
+      return (
+        <button onClick={connectAccount}>
+          Please connect your Metamask wallet
+        </button>
+      );
     }
 
-    if (balance == undefined) {
-      getBalance();
-    }
+    // if (balance == undefined && atm) {
+    //   getBalance();
+    // }
 
     return (
       <div>
         <p>Your Account: {account}</p>
-        <p>Your Balance: {balance}</p>
-        <button onClick={deposit}>Deposit 1 ETH</button>
-        <button onClick={withdraw}>Withdraw 1 ETH</button>
+        <p>Current No: {balance}</p>
+        <button onClick={increaseCounter}>Increase Counter</button>
+        <button onClick={decreaseCounter}>Decrease Counter</button>
       </div>
-    )
-  }
+    );
+  };
 
-  useEffect(() => {getWallet();}, []);
+  useEffect(() => {
+    getWallet();
+  }, []);
 
   return (
     <main className="container">
-      <header><h1>Welcome to the Metacrafters ATM!</h1></header>
+      <header>
+        <h1>Welcome to the Metacrafters ATM!</h1>
+      </header>
       {initUser()}
-      <style jsx>{`
-        .container {
-          text-align: center
-        }
-      `}
+      <style jsx>
+        {`
+          .container {
+            text-align: center;
+          }
+        `}
       </style>
     </main>
-  )
+  );
 }
