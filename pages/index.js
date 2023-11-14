@@ -89,9 +89,9 @@ export default function HomePage() {
       );
     }
 
-    // if (balance == undefined && atm) {
-    //   getBalance();
-    // }
+    if (balance == undefined && atm) {
+      getCounter();
+    }
 
     return (
       <div>
